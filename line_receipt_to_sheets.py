@@ -21,12 +21,19 @@ Googleスプレッドシートに家計簿として自動記録するBot
    （初回実行時はブラウザが開き、Googleアカウントでのログイン・許可が必要です。
      token_sheets.json に認証情報が保存され、次回以降は自動で使われます）
 
-3. 環境変数を設定（すべて必須。コードには直接書き込まない）:
+   ローカルにファイルを置く代わりに、環境変数 GOOGLE_CREDENTIALS_JSON / GOOGLE_TOKEN_JSON に
+   それぞれの中身(JSON文字列)を設定することもできます（本番環境などファイルを置きにくい場合向け）。
+   設定されている場合は、起動時にその内容から credentials.json / token_sheets.json を
+   自動生成します。環境変数が無い場合は、これまで通りローカルのファイルを使います。
+
+3. 環境変数を設定（LINE_CHANNEL_ACCESS_TOKEN 等は必須。コードには直接書き込まない）:
    ・LINE_CHANNEL_ACCESS_TOKEN … LINE Developersコンソールで発行したChannel access token
    ・LINE_CHANNEL_SECRET       … LINE Developersコンソールで発行したChannel secret
                                   （Webhookの署名検証に使用。なりすましリクエストを防ぐため必須）
    ・ANTHROPIC_API_KEY         … Claude APIキー
    ・SPREADSHEET_ID            … 記録先のGoogleスプレッドシートID
+   ・GOOGLE_CREDENTIALS_JSON   … （任意）credentials.jsonの中身のJSON文字列
+   ・GOOGLE_TOKEN_JSON         … （任意）token_sheets.jsonの中身のJSON文字列
 
    Windows(PowerShell)の例:
        $env:LINE_CHANNEL_ACCESS_TOKEN="xxxx"
@@ -128,12 +135,39 @@ def check_required_env_vars():
     if not os.path.exists(CREDENTIALS_FILE):
         logger.error(
             "%s が見つかりません。GoogleのOAuthクライアント用JSON（デスクトップアプリ）を、"
-            "このスクリプトと同じフォルダに配置してください。",
+            "このスクリプトと同じフォルダに配置するか、環境変数 GOOGLE_CREDENTIALS_JSON に"
+            "その内容を設定してください。",
             CREDENTIALS_FILE,
         )
         sys.exit(1)
 
 
+def write_env_json_to_file(env_var_name: str, filepath: str):
+    """環境変数にJSON文字列が設定されていれば、その内容をローカルファイルとして書き出す。
+    環境変数が未設定の場合は何もしない（ローカルの既存ファイルをそのまま使う）"""
+    raw_value = os.environ.get(env_var_name)
+    if not raw_value:
+        return
+
+    try:
+        json.loads(raw_value)
+    except json.JSONDecodeError as e:
+        logger.error("環境変数 %s の内容が正しいJSON形式ではありません: %s", env_var_name, e)
+        sys.exit(1)
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(raw_value)
+
+
+def prepare_google_auth_files():
+    """GOOGLE_CREDENTIALS_JSON / GOOGLE_TOKEN_JSON が設定されていれば、その内容を
+    ローカルのcredentials.json / token_sheets.jsonとして一時的に書き出してから、
+    既存のファイル読み込みロジックで扱えるようにする"""
+    write_env_json_to_file("GOOGLE_CREDENTIALS_JSON", CREDENTIALS_FILE)
+    write_env_json_to_file("GOOGLE_TOKEN_JSON", TOKEN_FILE)
+
+
+prepare_google_auth_files()
 check_required_env_vars()
 
 app = Flask(__name__)
