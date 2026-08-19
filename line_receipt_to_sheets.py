@@ -60,6 +60,7 @@ import logging
 import os
 import sys
 import threading
+import time
 from datetime import datetime
 
 import anthropic
@@ -474,6 +475,14 @@ def main():
 
     port = int(os.environ.get("PORT", 5000))
     logger.info("Webhookサーバーを起動しました（ポート: %s、エンドポイント: /callback）", port)
+
+    if os.environ.get("RENDER"):
+        # Renderなどのクラウド環境ではキーボード入力が無く、input()が即座にEOFErrorになるため、
+        # exit/quit待機ループの代わりにスリープし続けてプロセスを稼働させ続ける
+        logger.info("RENDER環境変数を検知したため、input()での待機は行わずサーバーを稼働し続けます。")
+        while True:
+            time.sleep(3600)
+
     logger.info("終了するには 'exit' または 'quit' と入力してください。")
 
     while True:
