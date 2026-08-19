@@ -30,8 +30,10 @@ LINEに画像メッセージを送るだけで、以下の流れを自動化し�
 | `LINE_CHANNEL_SECRET` | LINE Developersコンソールで発行したChannel secret(Webhook署名検証用) |
 | `ANTHROPIC_API_KEY` | Claude APIキー |
 | `SPREADSHEET_ID` | 記録先のGoogleスプレッドシートID |
+| `GOOGLE_CREDENTIALS_JSON` | (任意) `credentials.json` の中身をそのまま文字列として設定する場合に使用(Renderなどクラウド環境でファイルを配置できない場合向け) |
+| `GOOGLE_TOKEN_JSON` | (任意) `token_sheets.json` の中身をそのまま文字列として設定する場合に使用(同上) |
 
-このほか、Googleスプレッドシート用のOAuthクライアントJSON(`credentials.json`)をスクリプトと同じフォルダに配置してください。初回実行時にブラウザ認証が行われ、`token_sheets.json` が自動生成されます。
+このほか、Googleスプレッドシート用のOAuthクライアントJSON(`credentials.json`)をスクリプトと同じフォルダに配置してください。初回実行時にブラウザ認証が行われ、`token_sheets.json` が自動生成されます。`GOOGLE_CREDENTIALS_JSON` / `GOOGLE_TOKEN_JSON` が設定されている場合は、起動時にその内容から `credentials.json` / `token_sheets.json` が自動生成されるため、ファイルの配置は不要です(未設定の場合はこれまで通りローカルのファイルが使われます)。
 
 **`credentials.json` / `token_sheets.json` などの認証情報ファイルは、このリポジトリには含まれていません。** 各自で用意し、絶対にリポジトリにコミットしないでください。
 
